@@ -114,9 +114,11 @@ defmodule Mix2nix do
     """
       #{name} = buildMix rec {
         name = "#{name}";
+        version = "#{String.slice(rev, 0, 8)}";
 
         src = fetchGit {
           name = "${name}";
+          version = "${version}";
           url = "#{url}";
           rev = "#{rev}";
         };
