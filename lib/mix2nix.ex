@@ -108,6 +108,25 @@ defmodule Mix2nix do
       ),
       do: get_hexpm_expression(allpkgs, name, hex_name, version, builders, deps)
 
+  def nix_expression(allpkgs, name, {:git, url, rev, _params}) do
+    name = Atom.to_string(name)
+
+    """
+      #{name} = buildMix rec {
+        name = "#{name}";
+
+        src = fetchGit {
+          name = "${name}";
+          url = "#{url}";
+          rev = "#{rev}";
+        };
+        # Intersection of all of the packages mix2nix found and those
+        # declared in the package:
+        beamDeps = with builtins; map (a: getAttr a packages) (filter (a: hasAttr a packages) (lib.splitString " " (readFile src.deps)));
+      };
+    """
+  end
+
   def nix_expression(_allpkgs, _name, _pkg) do
     ""
   end
@@ -131,9 +150,9 @@ defmodule Mix2nix do
           };
 
           beamDeps = #{deps};
-    """
-    <> hexpm_expression_extras(name, version)
-    <> "    };\n"
+    """ <>
+      hexpm_expression_extras(name, version) <>
+      "    };\n"
   end
 
   defp wrap(pkgs) do
